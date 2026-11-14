@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пик-контроллер — макет окошка</title>
+<style>
+  :root{
+    --bg0:#06090f;
+    --line:#ffffff12;
+    --txt:#e8edf6; --dim:#93a0b4; --dim2:#6b7787;
+    --green:#3ddc97; --red:#ff6b6b; --blue:#58a6ff; --orange:#f5b041;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  [hidden]{display:none !important}
+
+  body{
+    min-height:100vh;
+    display:grid; place-items:center;
+    padding:92px 16px 40px;
+    background:radial-gradient(1200px 800px at 50% -10%, #101a2b, var(--bg0));
+    color:var(--txt);
+    font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:13px;
+  }
+
+  /* ---------- демо-панель ---------- */
+  .demo-bar{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%);
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center;
+    max-width:96vw;
+    background:#111722a8; border:1px solid var(--line); border-radius:14px;
+    padding:8px 10px; backdrop-filter:blur(10px); z-index:5;
+  }
+  .demo-label{font-size:11.5px; color:var(--dim)}
+  .chip{
+    background:transparent; border:1px solid #ffffff1c; color:var(--dim);
+    font:600 11.5px/1 "Segoe UI",sans-serif; padding:7px 11px; border-radius:9px;
+    cursor:pointer; transition:.15s;
+  }
+  .chip:hover{background:#ffffff10; color:var(--txt)}
+  .chip.active{border-color:#58a6ff66; background:rgba(88,166,255,.14); color:#cfe4ff}
+  .chip.warn.active{border-color:#f5b04166; background:rgba(245,176,65,.13); color:#fcd34d}
+
+  /* ---------- окошко ---------- */
+  .popup{
+    width:432px; max-width:94vw;
+    border-radius:26px;
+    background:linear-gradient(180deg,#161d29f2,#0f1520f5);
+    border:1px solid #ffffff14;
+    box-shadow:0 30px 90px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.05);
+    overflow:hidden;
+  }
+
+  .err-banner{
+    display:flex; gap:10px; align-items:flex-start;
+    margin:12px 16px 0; padding:10px 12px; border-radius:13px;
+    background:#f5b04112; border:1px solid #f5b0413d; color:#fcd34d; font-size:12px; line-height:1.45;
+  }
+  .err-ico{
+    flex:0 0 auto; width:20px; height:20px; border-radius:50%;
+    background:#f5b0412b; display:grid; place-items:center; font-weight:800; font-size:12px;
+  }
+  .err-sub{color:#e8cd93; margin-top:2px; font-size:11.5px}
+
+  .pp-head{display:flex; justify-content:space-between; align-items:center; padding:15px 18px 6px}
+  .pp-title{display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; letter-spacing:.2px}
+  .logo{
+    width:10px; height:10px; border-radius:50%;
+    background:linear-gradient(135deg,#58a6ff,#3ddc97);
+    box-shadow:0 0 10px #58a6ff88;
+  }
+  .pp-clock{font-family:Consolas,monospace; font-size:12.5px; color:var(--dim)}
+
+  .prov{padding:13px 18px 15px}
+  .prov + .prov{border-top:1px solid var(--line)}
+  .stale .prov{opacity:.72; filter:saturate(.65)}
+  .stale .err-banner{opacity:1; filter:none}
+
+  .prov-head{display:flex; align-items:center; gap:10px}
+  .badge{
+    flex:0 0 auto; width:30px; height:30px; border-radius:10px;
+    display:grid; place-items:center; font-weight:800; font-size:14px; color:#fff;
+  }
+  .badge.glm{background:linear-gradient(135deg,#8a63ff,#4f8cff)}
+  .badge.ds{background:linear-gradient(135deg,#2b6cff,#173e92)}
+  .prov-name{flex:1; font-weight:700; font-size:13.5px; line-height:1.25}
+  .prov-name .sub{display:block; font-weight:400; font-size:11px; color:var(--dim2)}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:7px;
+    padding:4px 12px; border-radius:999px; font-size:11.5px; font-weight:700; white-space:nowrap;
+  }
+  .pill i{width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; animation:pulse 2s infinite}
+  .pill.off{color:#7ee2b8; background:#3ddc9714; border:1px solid #3ddc9733}
+  .pill.peak{color:#ffa4a4; background:#ff6b6b16; border:1px solid #ff6b6b3d}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+  .peak-line{font-size:11.5px; color:var(--dim); margin:8px 0 2px}
+  .peak-line b{color:#b9c4d6; font-weight:600}
+  .peak-line .why{color:#82b8ea}
+
+  .lbl{font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--dim2); margin:12px 0 6px}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px}
+  th,td{padding:5.5px 8px}
+  thead th{
+    font-size:10.5px; font-weight:700; letter-spacing:.4px; color:var(--dim2);
+    border-bottom:1px solid var(--line); text-align:right;
+  }
+  thead th:first-child{text-align:left}
+  tbody td{border-bottom:1px solid #ffffff08}
+  tbody tr:last-child td{border-bottom:none}
+  td.p{font-family:Consolas,monospace; text-align:right}
+  td:first-child{color:#c3ccdb}
+
+  /* ---------- выбор тарифа GLM ---------- */
+  .seg{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap}
+  .seg button{
+    background:transparent; border:1px solid #ffffff1c; color:var(--dim);
+    font:600 11px/1 "Segoe UI",sans-serif; padding:6px 10px; border-radius:999px;
+    cursor:pointer; transition:.15s;
+  }
+  .seg button:hover{color:var(--txt); background:#ffffff10}
+  .seg button.active{color:#cfe4ff; border-color:#58a6ff66; background:rgba(88,166,255,.14)}
+
+  .plan-stats{display:flex; gap:8px; margin-top:10px}
+  .pstat{
+    flex:1; background:#ffffff07; border:1px solid #ffffff0e;
+    border-radius:12px; padding:8px 10px;
+  }
+  .pstat span{display:block; font-size:9.5px; color:var(--dim2); letter-spacing:.5px; text-transform:uppercase}
+  .pstat b{display:block; font-family:Consolas,monospace; font-weight:700; font-size:14.5px; margin-top:3px}
+  .pstat i{display:block; font-style:normal; font-size:9.5px; color:var(--dim2); margin-top:1px}
+  .plan-tokens{font-size:10.5px; color:var(--dim2); margin-top:8px}
+
+  .chipm{
+    display:inline-block; padding:3.5px 11px; border-radius:999px;
+    border:1px solid #ffffff14; color:var(--dim); font-size:11.5px; font-weight:600;
+  }
+  .chipm.m-off{color:#7ee2b8; border-color:#3ddc9730}
+  .chipm.m-peak{color:#ffa4a4; border-color:#ff6b6b30}
+  .prov.offpeak .chipm.m-off,
+  .prov.peak    .chipm.m-peak{
+    color:#cfe4ff; border-color:#58a6ff66; background:rgba(88,166,255,.13);
+    box-shadow:0 0 0 1px #58a6ff2b;
+  }
+
+  .mult-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .mult-row .cap{font-size:11.5px; color:var(--dim)}
+
+  .note{font-size:10px; color:var(--dim2); margin-top:7px}
+
+  /* ---------- таблица DeepSeek (модели в колонках) ---------- */
+  .dsflat th, .dsflat td{padding:5px 6px}
+  .dsflat td:first-child{font-size:11.5px; white-space:nowrap}
+  .dsflat thead th .m{display:block; font-size:10.5px; font-weight:700; color:#c3ccdb}
+  .dsflat thead th em{display:block; font-style:normal; font-size:9px; font-weight:700; letter-spacing:.3px; margin-top:1px}
+  .dsflat thead th:nth-child(2) em, .dsflat thead th:nth-child(4) em{color:#5fd8a8}
+  .dsflat thead th:nth-child(3) em, .dsflat thead th:nth-child(5) em{color:#ff8f8f}
+
+  .prov-ds.offpeak .dsflat thead th:nth-child(2),
+  .prov-ds.offpeak .dsflat thead th:nth-child(4),
+  .prov-ds.peak    .dsflat thead th:nth-child(3),
+  .prov-ds.peak    .dsflat thead th:nth-child(5){
+    background:rgba(88,166,255,.10); box-shadow:inset 0 -2px 0 var(--blue);
+  }
+  .prov-ds.offpeak .dsflat thead th:nth-child(2) em,
+  .prov-ds.offpeak .dsflat thead th:nth-child(4) em,
+  .prov-ds.peak    .dsflat thead th:nth-child(3) em,
+  .prov-ds.peak    .dsflat thead th:nth-child(5) em{color:#9cc3ff}
+  .prov-ds.offpeak .dsflat thead th:nth-child(2) em::after,
+  .prov-ds.offpeak .dsflat thead th:nth-child(4) em::after,
+  .prov-ds.peak    .dsflat thead th:nth-child(3) em::after,
+  .prov-ds.peak    .dsflat thead th:nth-child(5) em::after{content:" ●"; color:var(--blue)}
+  .prov-ds.offpeak .dsflat td:nth-child(2),
+  .prov-ds.offpeak .dsflat td:nth-child(4),
+  .prov-ds.peak    .dsflat td:nth-child(3),
+  .prov-ds.peak    .dsflat td:nth-child(5){background:rgba(88,166,255,.08); color:#cfe4ff}
+
+  .pp-foot{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 18px 15px; border-top:1px solid var(--line);
+  }
+  .dots{display:flex; gap:5px}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px #3ddc9788}
+  .dot.err{background:var(--orange); box-shadow:0 0 6px #f5b04188}
+  .upd{flex:1; font-size:11.5px; color:var(--dim)}
+  .refresh{
+    display:inline-flex; align-items:center; gap:6px;
+    background:#ffffff10; border:1px solid #ffffff1c; color:var(--txt);
+    font:600 12px/1 "Segoe UI",sans-serif; padding:6px 13px; border-radius:10px; cursor:pointer; transition:.15s;
+  }
+  .refresh:hover{background:#ffffff1c}
+  .refresh.busy svg{animation:rot .8s linear infinite}
+  @keyframes rot{to{transform:rotate(360deg)}}
+
+  /* ---------- подпись и трей ---------- */
+  .caption{max-width:470px; margin-top:20px; text-align:center; font-size:12px; color:var(--dim); line-height:1.65}
+  .caption .k{font-weight:700}
+  .k.green{color:var(--green)} .k.red{color:var(--red)} .k.blue{color:var(--blue)} .k.orange{color:var(--orange)}
+  .caption .dim{color:var(--dim2); margin-top:6px}
+
+  .traybar{
+    margin-top:14px; display:flex; align-items:center; gap:14px;
+    background:#11172299; border:1px solid var(--line); border-radius:12px;
+    padding:8px 16px; font-size:11.5px; color:var(--dim);
+  }
+  .traybar .cap{color:var(--dim2)}
+  .tslot{display:inline-flex; align-items:center; gap:6px; opacity:.4; transition:.2s}
+  .tslot.on{opacity:1}
+  .tico{width:13px; height:13px; border-radius:50%}
+  .tico.g{background:var(--green); box-shadow:0 0 8px #3ddc97}
+  .tico.r{background:var(--red); box-shadow:0 0 8px #ff6b6b}
+  .tico.y{background:var(--orange); box-shadow:0 0 8px #f5b041}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <span class="demo-label">Демо:</span>
+  <button class="chip active" data-mode="auto">Авто (по часам)</button>
+  <button class="chip" data-mode="glm">GLM: пик</button>
+  <button class="chip" data-mode="ds">DeepSeek: пик</button>
+  <button class="chip" data-mode="cnhol" title="демо: у DeepSeek сегодня китайский праздник">DS: праздник</button>
+  <button class="chip" data-mode="wkoff" title="демо: будний день, обычный не-пиковый час">Будни: не-пик</button>
+  <button class="chip" data-mode="both">Оба: пик</button>
+  <button class="chip warn" data-mode="error">Ошибка обновления</button>
+</div>
+
+<main>
+  <div class="popup" id="popup">
+
+    <div class="err-banner" id="errBanner" hidden>
+      <div class="err-ico">!</div>
+      <div>
+        <b>Не удалось обновить данные</b>
+        <div class="err-sub">Сайт изменился или недоступен. Показаны данные от <b>вчера, 21:10</b> — скорее всего, приложение нужно поправить.</div>
+      </div>
+    </div>
+
+    <header class="pp-head">
+      <div class="pp-title"><span class="logo"></span>Пик-контроллер</div>
+      <div class="pp-clock" id="clock">--:--:--</div>
+    </header>
+
+    <!-- ================= GLM ================= -->
+    <section class="prov prov-glm offpeak" id="sec-glm">
+      <div class="prov-head">
+        <span class="badge glm">Z</span>
+        <div class="prov-name">GLM Coding Plan<span class="sub">Z.ai · подписка · пик по UTC+8</span></div>
+        <span class="pill off" id="pill-glm"><i></i><b>не пик</b></span>
+      </div>
+      <div class="peak-line" id="peakline-glm">…</div>
+
+      <div class="lbl">ТАРИФ ПОДПИСКИ</div>
+      <div class="seg" id="planSeg">
+        <button data-plan="lite">Lite</button>
+        <button data-plan="pro" class="active">Pro</button>
+        <button data-plan="max">Max</button>
+        <button data-plan="tstd" title="Team Standard — место в команде">Team Std</button>
+        <button data-plan="tprem" title="Team Premium — место в команде">Team Prem</button>
+      </div>
+      <div class="plan-stats">
+        <div class="pstat"><span>5 часов</span><b id="plan5h">12 000</b><i>кредитов</i></div>
+        <div class="pstat"><span>неделя</span><b id="planWeek">60 000</b><i>кредитов</i></div>
+        <div class="pstat"><span>цена</span><b id="planPrice">$80/мес</b><i id="planPriceNote">≈, не офиц.</i></div>
+      </div>
+      <div class="plan-tokens" id="planTokens">…</div>
+
+      <div class="lbl">СПИСАНИЕ КРЕДИТОВ СЕЙЧАС</div>
+      <div class="mult-row">
+        <span class="cap">списание:</span>
+        <span class="chipm m-off">×0.5 · не-пик</span>
+        <span class="chipm m-peak">×1.0 · пик</span>
+      </div>
+
+      <div class="lbl">КРЕДИТЫ ЗА 10 000 ТОКЕНОВ</div>
+      <table>
+        <thead><tr><th>Модель</th><th>вход</th><th>кэш</th><th>выход</th></tr></thead>
+        <tbody>
+          <tr><td>GLM-5.3</td><td class="p">6.9</td><td class="p">1.7</td><td class="p">24</td></tr>
+          <tr><td>GLM-5.3-Flash</td><td class="p">2.3</td><td class="p">0.56</td><td class="p">8</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============== DEEPSEEK ============== -->
+    <section class="prov prov-ds offpeak" id="sec-ds">
+      <div class="prov-head">
+        <span class="badge ds">D</span>
+        <div class="prov-name">DeepSeek API<span class="sub">цены USD за 1 млн токенов · пик по UTC</span></div>
+        <span class="pill off" id="pill-ds"><i></i><b>не пик</b></span>
+      </div>
+      <div class="peak-line" id="peakline-ds">…</div>
+
+      <table class="dsflat">
+        <thead><tr>
+          <th></th>
+          <th title="deepseek-flash"><span class="m">flash</span><em>не-пик</em></th>
+          <th title="deepseek-flash"><span class="m">flash</span><em>пик</em></th>
+          <th title="deepseek-v4-pro"><span class="m">v4-pro</span><em>не-пик</em></th>
+          <th title="deepseek-v4-pro"><span class="m">v4-pro</span><em>пик</em></th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Вход · кэш-хит</td><td class="p">$0.003</td><td class="p">$0.006</td><td class="p">$0.022</td><td class="p">$0.044</td></tr>
+          <tr><td>Вход · без кэша</td><td class="p">$0.15</td><td class="p">$0.30</td><td class="p">$0.66</td><td class="p">$1.32</td></tr>
+          <tr><td>Выход</td><td class="p">$0.60</td><td class="p">$1.20</td><td class="p">$1.98</td><td class="p">$3.96</td></tr>
+        </tbody>
+      </table>
+      <div class="note">flash = DeepSeek-V4.1-Flash-1017 · v4-pro = DeepSeek-V4-Pro-0813</div>
+    </section>
+
+    <footer class="pp-foot">
+      <div class="dots">
+        <span class="dot" id="dot-glm" title="docs.z.ai"></span>
+        <span class="dot" id="dot-ds" title="api-docs.deepseek.com"></span>
+      </div>
+      <div class="upd">Обновлено: <span id="updTime">—</span></div>
+      <button class="refresh" id="btnRefresh">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        Обновить
+      </button>
+    </footer>
+  </div>
+
+  <div class="caption">
+    <span class="k green">зелёный</span> — не пик ·
+    <span class="k red">красный</span> — пик ·
+    <span class="k blue">синим</span> — цена/тариф, применяемые сейчас ·
+    <span class="k orange">оранжевый</span> — ошибка обновления
+    <div class="dim">В приложении окошко всплывает над треем по клику и само исчезает, когда курсор уходит.
+    Здесь — макет: кнопки сверху включают сценарии, режим «Авто» считает пик по реальному расписанию обоих провайдеров.</div>
+  </div>
+
+  <div class="traybar">
+    <span class="cap">иконка в трее:</span>
+    <span class="tslot" id="t-ok"><span class="tico g"></span>всё ок</span>
+    <span class="tslot" id="t-peak"><span class="tico r"></span>пик</span>
+    <span class="tslot" id="t-err"><span class="tico y"></span>ошибка</span>
+  </div>
+</main>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---- расписания пиков (проверены по официальным документам) ---- */
+  var SCHED_GLM = { tz:'Asia/Singapore', days:[1,2,3,4,5], windows:[[840,1080]] }; // 14:00–18:00 UTC+8
+  var SCHED_DS  = { tz:'UTC',            days:[1,2,3,4,5], windows:[[60,240],[360,600]] }; // 01:00–04:00, 06:00–10:00 UTC
+
+  var DAYS = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+
+  function tzParts(tz, date){
+    var fmt = new Intl.DateTimeFormat('en-GB', {timeZone:tz, weekday:'short', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
+    var p = {};
+    fmt.formatToParts(date||new Date()).forEach(function(x){ p[x.type]=x.value; });
+    return { day: DAYS[p.weekday], min: parseInt(p.hour,10)*60 + parseInt(p.minute,10) };
+  }
+
+  /* насколько tz опережает UTC (в минутах) в данный момент */
+  function tzOffsetMin(tz, date){
+    var fmt = new Intl.DateTimeFormat('en-US', {timeZone:tz, hourCycle:'h23', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    var p = {};
+    fmt.formatToParts(date||new Date()).forEach(function(x){ p[x.type]=x.value; });
+    var asUTC = Date.UTC(+p.year, +p.month-1, +p.day, +p.hour, +p.minute, +p.second);
+    return Math.round((asUTC - (date||new Date()).getTime()) / 60000);
+  }
+
+  function peakNow(s){
+    var t = tzParts(s.tz);
+    if (s.days.indexOf(t.day) < 0) return false;
+    return s.windows.some(function(w){ return t.min >= w[0] && t.min < w[1]; });
+  }
+
+  /* UTC-инстант границы окна (bmin минут от полуночи) на d суток вперёд, в tz */
+  function boundaryInstant(s, bmin, dOffset){
+    var base = new Date();
+    var guess = Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate()+dOffset, 0, bmin);
+    var inst = guess - tzOffsetMin(s.tz, new Date(guess))*60000;
+    inst = guess - tzOffsetMin(s.tz, new Date(inst))*60000; // поправка на DST
+    return inst;
+  }
+
+  function nextBoundary(s, kind){ // 'start' | 'end'
+    var now = Date.now(), best = null;
+    var bounds = s.windows.map(function(w){ return kind==='start' ? w[0] : w[1]; });
+    for (var d=0; d<=8; d++){
+      bounds.forEach(function(bmin){
+        var inst = boundaryInstant(s, bmin, d);
+        if (inst <= now) return;
+        if (s.days.indexOf(tzParts(s.tz, new Date(inst)).day) < 0) return;
+        if (best===null || inst < best) best = inst;
+      });
+    }
+    return best;
+  }
+
+  function boundaryLocal(s, bmin){
+    return new Date(boundaryInstant(s, bmin, 0)).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function fmtDur(mins){
+    if (mins < 1) return 'меньше минуты';
+    var h = Math.floor(mins/60), m = mins%60, out = [];
+    if (h) out.push(h+' ч');
+    if (m) out.push(m+' мин');
+    return out.join(' ');
+  }
+
+  /* ---------- тарифы GLM (лимиты — офиц. документация; цены Pro/Max — конфиг) ---------- */
+  var PLANS = {
+    lite:  { h5:'2 000',  week:'10 000',  price:'$18/мес',   note:'официальная',  tokens:'≈ 48–97 млн токенов в неделю (GLM-5.3, кэш-хит 95%)' },
+    pro:   { h5:'12 000', week:'60 000',  price:'$80/мес',   note:'≈, не офиц.',  tokens:'≈ 290–580 млн токенов в неделю (GLM-5.3, кэш-хит 95%)' },
+    max:   { h5:'28 000', week:'140 000', price:'$168/мес',  note:'≈, не офиц.',  tokens:'≈ 676–1 352 млн токенов в неделю (GLM-5.3, кэш-хит 95%)' },
+    tstd:  { h5:'15 000', week:'66 000',  price:'—/мес',     note:'за место',     tokens:'Team Standard: место в команде' },
+    tprem: { h5:'35 000', week:'155 000', price:'—/мес',     note:'за место',     tokens:'Team Premium: место в команде' }
+  };
+
+  function setPlan(key){
+    var p = PLANS[key];
+    document.getElementById('plan5h').textContent = p.h5;
+    document.getElementById('planWeek').textContent = p.week;
+    document.getElementById('planPrice').textContent = p.price;
+    document.getElementById('planPriceNote').textContent = p.note;
+    document.getElementById('planTokens').textContent = p.tokens;
+    document.querySelectorAll('#planSeg button').forEach(function(b){
+      b.classList.toggle('active', b.dataset.plan === key);
+    });
+  }
+
+  /* ---------- рендер ---------- */
+  var state = { mode:'auto', lastUpdate:new Date() };
+  var $ = function(id){ return document.getElementById(id); };
+
+  function setProvider(key, sched, peak, reason, note){
+    var sec = $('sec-'+key), pill = $('pill-'+key), line = $('peakline-'+key);
+    sec.classList.toggle('peak', peak);
+    sec.classList.toggle('offpeak', !peak);
+    pill.classList.toggle('peak', peak);
+    pill.classList.toggle('off', !peak);
+    pill.querySelector('b').textContent = peak ? 'ПИК' : 'не пик';
+
+    var wins = sched.windows.map(function(w){ return boundaryLocal(sched, w[0])+'–'+boundaryLocal(sched, w[1]); }).join(' и ');
+    var when = peak ? nextBoundary(sched,'end') : nextBoundary(sched,'start');
+    var mins = Math.max(0, Math.round((when - Date.now())/60000));
+    line.innerHTML = 'Пик: <b>пн–пт '+wins+'</b> (ваше время) · ' +
+      (peak ? 'закончится через '+fmtDur(mins) : 'начнётся через '+fmtDur(mins)) +
+      (note ? ' · '+note : '') +
+      (!peak && reason ? ' · <span class="why">'+reason+'</span>' : '');
+  }
+
+  function fmtUpd(d){
+    var hh = String(d.getHours()).padStart(2,'0'), mm = String(d.getMinutes()).padStart(2,'0');
+    return 'сегодня, '+hh+':'+mm;
+  }
+
+  /* подсказка, почему сейчас не-пик (1–3 слова) */
+  function offReason(sched, forcedHoliday){
+    if (forcedHoliday) return 'китайский праздник';
+    var day = tzParts(sched.tz).day;
+    if (day===0 || day===6) return 'выходной';
+    return 'вне пиковых часов';
+  }
+
+  function render(){
+    var autoG = peakNow(SCHED_GLM), autoD = peakNow(SCHED_DS), glmPeak, dsPeak;
+    var glmReason = null, dsReason = null;
+    if (state.mode==='auto'){ glmPeak=autoG; dsPeak=autoD; }
+    else if (state.mode==='glm'){ glmPeak=true; dsPeak=autoD; }
+    else if (state.mode==='ds'){ glmPeak=autoG; dsPeak=true; }
+    else if (state.mode==='cnhol'){ glmPeak=autoG; dsPeak=false; dsReason='китайский праздник'; }
+    else if (state.mode==='wkoff'){ glmPeak=false; dsPeak=false; glmReason='вне пиковых часов'; dsReason='вне пиковых часов'; }
+    else { glmPeak=true; dsPeak=true; }
+    var err = state.mode==='error';
+    if (!glmPeak && !glmReason) glmReason = offReason(SCHED_GLM, false);
+    if (!dsPeak  && !dsReason)  dsReason  = offReason(SCHED_DS,  state.mode==='cnhol');
+
+    setProvider('glm', SCHED_GLM, glmPeak, glmReason);
+    setProvider('ds',  SCHED_DS,  dsPeak,  dsReason);
+
+    $('errBanner').hidden = !err;
+    $('popup').classList.toggle('stale', err);
+    $('dot-glm').classList.toggle('err', err);
+    $('dot-ds').classList.toggle('err', err);
+    $('updTime').textContent = err ? 'вчера, 21:10 ⚠' : fmtUpd(state.lastUpdate);
+
+    $('t-ok').classList.toggle('on', !err && !glmPeak && !dsPeak);
+    $('t-peak').classList.toggle('on', !err && (glmPeak || dsPeak));
+    $('t-err').classList.toggle('on', err);
+  }
+
+  /* ---------- часы и таймеры ---------- */
+  function tick(){
+    $('clock').textContent = new Date().toLocaleTimeString('ru-RU');
+  }
+  tick(); setPlan('pro'); render();
+  setInterval(tick, 1000);
+  setInterval(render, 30000); // пересчёт «через сколько пик»
+
+  /* ---------- выбор тарифа GLM ---------- */
+  document.querySelectorAll('#planSeg button').forEach(function(b){
+    b.addEventListener('click', function(){ setPlan(b.dataset.plan); });
+  });
+
+  /* ---------- демо-кнопки ---------- */
+  var chips = document.querySelectorAll('.chip');
+  chips.forEach(function(ch){
+    ch.addEventListener('click', function(){
+      chips.forEach(function(c){ c.classList.remove('active'); });
+      ch.classList.add('active');
+      state.mode = ch.dataset.mode;
+      render();
+    });
+  });
+
+  /* ---------- кнопка «Обновить» ---------- */
+  $('btnRefresh').addEventListener('click', function(){
+    var b = $('btnRefresh');
+    b.classList.add('busy');
+    setTimeout(function(){
+      b.classList.remove('busy');
+      state.lastUpdate = new Date();
+      render();
+    }, 800);
+  });
+})();
+</script>
+</body>
+</html>

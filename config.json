@@ -1,0 +1,18 @@
+{
+  "_comment": "Настройки пик-контроллера. refresh_interval_minutes — как часто проверять сайты (кнопка «Обновить» работает всегда). ui_transparent — экспериментальная прозрачность окна (26px скругление); на многих машинах WebView2 её не поддерживает и вокруг окошка виден тёмный прямоугольник — поэтому по умолчанию false: непрозрачное окно с системным скруглением. glm_prices — цены тарифов (их нет на официальной странице в машинном виде; Lite — официальная). glm_static_plans — лимиты Team-тарифов из docs.z.ai/devpack/teamplan.",
+
+  "refresh_interval_minutes": 60,
+
+  "ui_transparent": false,
+
+  "glm_prices": {
+    "lite_price": "$18/мес", "lite_note": "официальная",
+    "pro_price": "$80/мес", "pro_note": "≈, не офиц.",
+    "max_price": "$168/мес", "max_note": "≈, не офиц."
+  },
+
+  "glm_static_plans": {
+    "tstd": { "h5": "15 000", "week": "66 000", "price": "—/мес", "note": "за место", "tokens": "Team Standard: место в команде" },
+    "tprem": { "h5": "35 000", "week": "155 000", "price": "—/мес", "note": "за место", "tokens": "Team Premium: место в команде" }
+  }
+}

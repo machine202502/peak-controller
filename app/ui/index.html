@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пик-контроллер</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="popup" id="popup">
+
+  <div class="err-banner" id="errBanner" hidden>
+    <div class="err-ico">!</div>
+    <div>
+      <b>Не удалось обновить данные</b>
+      <div class="err-sub" id="errSub">—</div>
+    </div>
+  </div>
+
+  <header class="pp-head">
+    <div class="pp-title"><span class="logo"></span>Пик-контроллер</div>
+    <div class="pp-clock" id="clock">--:--:--</div>
+  </header>
+
+  <!-- ================= GLM ================= -->
+  <section class="prov prov-glm offpeak" id="sec-glm">
+    <div class="prov-head">
+      <span class="badge glm">Z</span>
+      <div class="prov-name">GLM Coding Plan<span class="sub">Z.ai · подписка · пик по UTC+8</span></div>
+      <span class="pill off" id="pill-glm"><i></i><b>не пик</b></span>
+    </div>
+    <div class="peak-line" id="peakline-glm">Загрузка…</div>
+
+    <div class="lbl">ТАРИФ ПОДПИСКИ</div>
+    <div class="seg" id="planSeg"></div>
+    <div class="plan-stats">
+      <div class="pstat"><span>5 часов</span><b id="plan5h">—</b><i>кредитов</i></div>
+      <div class="pstat"><span>неделя</span><b id="planWeek">—</b><i>кредитов</i></div>
+      <div class="pstat"><span>цена</span><b id="planPrice">—</b><i id="planPriceNote"></i></div>
+    </div>
+    <div class="plan-tokens" id="planTokens"></div>
+
+    <div class="lbl">СПИСАНИЕ КРЕДИТОВ СЕЙЧАС</div>
+    <div class="mult-row">
+      <span class="cap">списание:</span>
+      <span class="chipm m-off" id="chipOff">×0.5 · не-пик</span>
+      <span class="chipm m-peak" id="chipPeak">×1.0 · пик</span>
+    </div>
+
+    <div class="lbl">КРЕДИТЫ ЗА 10 000 ТОКЕНОВ</div>
+    <table id="glmModels"></table>
+  </section>
+
+  <!-- ============== DEEPSEEK ============== -->
+  <section class="prov prov-ds offpeak" id="sec-ds">
+    <div class="prov-head">
+      <span class="badge ds">D</span>
+      <div class="prov-name">DeepSeek API<span class="sub">цены USD за 1 млн токенов · пик по UTC</span></div>
+      <span class="pill off" id="pill-ds"><i></i><b>не пик</b></span>
+    </div>
+    <div class="peak-line" id="peakline-ds">Загрузка…</div>
+
+    <table class="dsflat" id="dsTable"></table>
+    <div class="note" id="dsNote"></div>
+  </section>
+
+  <footer class="pp-foot">
+    <div class="dots">
+      <span class="dot" id="dot-glm" title="docs.z.ai"></span>
+      <span class="dot" id="dot-ds" title="api-docs.deepseek.com"></span>
+    </div>
+    <div class="upd">Обновлено: <span id="updTime">—</span></div>
+    <button class="refresh" id="btnRefresh">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      Обновить
+    </button>
+  </footer>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

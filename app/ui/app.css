@@ -1,0 +1,173 @@
+/* Пик-контроллер — стили окошка (перенос макета mockup/popup.html 1:1,
+   без демо-панели; окно приложения = само окошко). */
+:root{
+  --line:#ffffff12;
+  --txt:#e8edf6; --dim:#93a0b4; --dim2:#6b7787;
+  --green:#3ddc97; --red:#ff6b6b; --blue:#58a6ff; --orange:#f5b041;
+}
+*{box-sizing:border-box; margin:0; padding:0}
+[hidden]{display:none !important}
+
+html,body{background:transparent; overflow:hidden}
+/* режим непрозрачного окна (fallback, если прозрачность не поддержана) */
+html.opaque{background:#0f1520}
+html.opaque .popup{margin:0; border-radius:0; box-shadow:none}
+
+body{
+  font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  font-size:13px; color:var(--txt);
+  user-select:none; cursor:default;
+}
+
+.popup{
+  width:auto; max-width:none;
+  margin:14px;
+  border-radius:26px;
+  background:linear-gradient(180deg,#161d29f2,#0f1520f5);
+  border:1px solid #ffffff14;
+  box-shadow:0 6px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+  overflow:hidden;
+}
+
+.err-banner{
+  display:flex; gap:10px; align-items:flex-start;
+  margin:12px 16px 0; padding:10px 12px; border-radius:13px;
+  background:#f5b04112; border:1px solid #f5b0413d; color:#fcd34d; font-size:12px; line-height:1.45;
+}
+.err-ico{
+  flex:0 0 auto; width:20px; height:20px; border-radius:50%;
+  background:#f5b0412b; display:grid; place-items:center; font-weight:800; font-size:12px;
+}
+.err-sub{color:#e8cd93; margin-top:2px; font-size:11.5px}
+
+.pp-head{display:flex; justify-content:space-between; align-items:center; padding:15px 18px 6px}
+.pp-title{display:flex; align-items:center; gap:8px; font-weight:700; font-size:14px; letter-spacing:.2px}
+.logo{
+  width:10px; height:10px; border-radius:50%;
+  background:linear-gradient(135deg,#58a6ff,#3ddc97);
+  box-shadow:0 0 10px #58a6ff88;
+}
+.pp-clock{font-family:Consolas,monospace; font-size:12.5px; color:var(--dim)}
+
+.prov{padding:13px 18px 15px}
+.prov + .prov{border-top:1px solid var(--line)}
+.stale .prov{opacity:.72; filter:saturate(.65)}
+.stale .err-banner{opacity:1; filter:none}
+
+.prov-head{display:flex; align-items:center; gap:10px}
+.badge{
+  flex:0 0 auto; width:30px; height:30px; border-radius:10px;
+  display:grid; place-items:center; font-weight:800; font-size:14px; color:#fff;
+}
+.badge.glm{background:linear-gradient(135deg,#8a63ff,#4f8cff)}
+.badge.ds{background:linear-gradient(135deg,#2b6cff,#173e92)}
+.prov-name{flex:1; font-weight:700; font-size:13.5px; line-height:1.25}
+.prov-name .sub{display:block; font-weight:400; font-size:11px; color:var(--dim2)}
+
+.pill{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:4px 12px; border-radius:999px; font-size:11.5px; font-weight:700; white-space:nowrap;
+}
+.pill i{width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; animation:pulse 2s infinite}
+.pill.off{color:#7ee2b8; background:#3ddc9714; border:1px solid #3ddc9733}
+.pill.peak{color:#ffa4a4; background:#ff6b6b16; border:1px solid #ff6b6b3d}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+.peak-line{font-size:11.5px; color:var(--dim); margin:8px 0 2px}
+.peak-line b{color:#b9c4d6; font-weight:600}
+.peak-line .why{color:#82b8ea}
+
+.lbl{font-size:10.5px; font-weight:700; letter-spacing:.7px; color:var(--dim2); margin:12px 0 6px}
+
+table{width:100%; border-collapse:collapse; font-size:12.5px}
+th,td{padding:5.5px 8px}
+thead th{
+  font-size:10.5px; font-weight:700; letter-spacing:.4px; color:var(--dim2);
+  border-bottom:1px solid var(--line); text-align:right;
+}
+thead th:first-child{text-align:left}
+tbody td{border-bottom:1px solid #ffffff08}
+tbody tr:last-child td{border-bottom:none}
+td.p{font-family:Consolas,monospace; text-align:right}
+td:first-child{color:#c3ccdb}
+
+/* выбор тарифа GLM */
+.seg{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap}
+.seg button{
+  background:transparent; border:1px solid #ffffff1c; color:var(--dim);
+  font:600 11px/1 "Segoe UI",sans-serif; padding:6px 10px; border-radius:999px;
+  cursor:pointer; transition:.15s;
+}
+.seg button:hover{color:var(--txt); background:#ffffff10}
+.seg button.active{color:#cfe4ff; border-color:#58a6ff66; background:rgba(88,166,255,.14)}
+
+.plan-stats{display:flex; gap:8px; margin-top:10px}
+.pstat{
+  flex:1; background:#ffffff07; border:1px solid #ffffff0e;
+  border-radius:12px; padding:8px 10px;
+}
+.pstat span{display:block; font-size:9.5px; color:var(--dim2); letter-spacing:.5px; text-transform:uppercase}
+.pstat b{display:block; font-family:Consolas,monospace; font-weight:700; font-size:14.5px; margin-top:3px}
+.pstat i{display:block; font-style:normal; font-size:9.5px; color:var(--dim2); margin-top:1px}
+.plan-tokens{font-size:10.5px; color:var(--dim2); margin-top:8px}
+
+.chipm{
+  display:inline-block; padding:3.5px 11px; border-radius:999px;
+  border:1px solid #ffffff14; color:var(--dim); font-size:11.5px; font-weight:600;
+}
+.chipm.m-off{color:#7ee2b8; border-color:#3ddc9730}
+.chipm.m-peak{color:#ffa4a4; border-color:#ff6b6b30}
+.prov.offpeak .chipm.m-off,
+.prov.peak    .chipm.m-peak{
+  color:#cfe4ff; border-color:#58a6ff66; background:rgba(88,166,255,.13);
+  box-shadow:0 0 0 1px #58a6ff2b;
+}
+
+.mult-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.mult-row .cap{font-size:11.5px; color:var(--dim)}
+
+.note{font-size:10px; color:var(--dim2); margin-top:7px}
+
+/* таблица DeepSeek (модели в колонках) */
+.dsflat th, .dsflat td{padding:5px 6px}
+.dsflat td:first-child{font-size:11.5px; white-space:nowrap}
+.dsflat thead th .m{display:block; font-size:10.5px; font-weight:700; color:#c3ccdb}
+.dsflat thead th em{display:block; font-style:normal; font-size:9px; font-weight:700; letter-spacing:.3px; margin-top:1px}
+.dsflat thead th:nth-child(2) em, .dsflat thead th:nth-child(4) em{color:#5fd8a8}
+.dsflat thead th:nth-child(3) em, .dsflat thead th:nth-child(5) em{color:#ff8f8f}
+
+.prov-ds.offpeak .dsflat thead th:nth-child(2),
+.prov-ds.offpeak .dsflat thead th:nth-child(4),
+.prov-ds.peak    .dsflat thead th:nth-child(3),
+.prov-ds.peak    .dsflat thead th:nth-child(5){
+  background:rgba(88,166,255,.10); box-shadow:inset 0 -2px 0 var(--blue);
+}
+.prov-ds.offpeak .dsflat thead th:nth-child(2) em,
+.prov-ds.offpeak .dsflat thead th:nth-child(4) em,
+.prov-ds.peak    .dsflat thead th:nth-child(3) em,
+.prov-ds.peak    .dsflat thead th:nth-child(5) em{color:#9cc3ff}
+.prov-ds.offpeak .dsflat thead th:nth-child(2) em::after,
+.prov-ds.offpeak .dsflat thead th:nth-child(4) em::after,
+.prov-ds.peak    .dsflat thead th:nth-child(3) em::after,
+.prov-ds.peak    .dsflat thead th:nth-child(5) em::after{content:" ●"; color:var(--blue)}
+.prov-ds.offpeak .dsflat td:nth-child(2),
+.prov-ds.offpeak .dsflat td:nth-child(4),
+.prov-ds.peak    .dsflat td:nth-child(3),
+.prov-ds.peak    .dsflat td:nth-child(5){background:rgba(88,166,255,.08); color:#cfe4ff}
+
+.pp-foot{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 18px 15px; border-top:1px solid var(--line);
+}
+.dots{display:flex; gap:5px}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 6px #3ddc9788}
+.dot.err{background:var(--orange); box-shadow:0 0 6px #f5b04188}
+.upd{flex:1; font-size:11.5px; color:var(--dim)}
+.refresh{
+  display:inline-flex; align-items:center; gap:6px;
+  background:#ffffff10; border:1px solid #ffffff1c; color:var(--txt);
+  font:600 12px/1 "Segoe UI",sans-serif; padding:6px 13px; border-radius:10px; cursor:pointer; transition:.15s;
+}
+.refresh:hover{background:#ffffff1c}
+.refresh.busy svg{animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
