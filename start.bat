@@ -1,4 +1,8 @@
 @echo off
-rem Пик-контроллер: запуск в трее без окна консоли (Python 3.12 + PySide6)
+rem Пик-контроллер: если собран exe — запускаем его, иначе из исходников (py -3.12)
 cd /d "%~dp0"
-start "" pyw -3.12 "app\main.py"
+if exist "dist\PeakController\PeakController.exe" (
+  start "" "dist\PeakController\PeakController.exe"
+) else (
+  start "" pyw -3.12 "app\main.py"
+)

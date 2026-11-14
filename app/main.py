@@ -19,10 +19,17 @@ from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent            # app/
-ROOT = BASE.parent                                # корень проекта
+# ---------------------------------------------------------------- пути
+if getattr(sys, "frozen", False):
+    # запущено как собранный exe: ресурсы — в бандле, данные — рядом с exe
+    BASE = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+    ROOT = Path(sys.executable).resolve().parent      # data/, config.json — рядом с exe
+    UI_DIR = BASE / "ui"
+else:
+    BASE = Path(__file__).resolve().parent            # app/
+    ROOT = BASE.parent                                # корень проекта
+    UI_DIR = BASE / "ui"
 DATA = ROOT / "data"
-UI_DIR = BASE / "ui"
 LOG_PATH = DATA / "app.log"
 
 sys.path.insert(0, str(BASE))
@@ -273,11 +280,15 @@ def set_autostart(on: bool) -> None:
                 bat.unlink()
                 logging.info("автозапуск выключен")
             return
-        exe = Path(sys.executable)
-        py = exe.with_name("pythonw.exe")
-        if not py.exists():
-            py = shutil.which("pyw") or sys.executable
-        bat.write_text(f'@echo off\r\nstart "" "{py}" -3.12 "{BASE / "main.py"}"\r\n', encoding="utf-8")
+        exe = ROOT / "dist" / "PeakController" / "PeakController.exe"
+        if exe.exists():  # собранный exe — приоритет
+            bat.write_text(f'@echo off\r\nstart "" "{exe}"\r\n', encoding="utf-8")
+        else:
+            pyexe = Path(sys.executable)
+            py = pyexe.with_name("pythonw.exe")
+            if not py.exists() or pyexe.name == "pythonw.exe":
+                py = shutil.which("pyw") or sys.executable
+            bat.write_text(f'@echo off\r\nstart "" "{py}" -3.12 "{BASE / "main.py"}"\r\n', encoding="utf-8")
         logging.info("автозапуск включён: %s", bat)
     except Exception:
         log_exc("set_autostart")
@@ -519,6 +530,15 @@ def _main() -> None:
     QApplication.setAttribute(Qt.AA_ShareOpenGLContexts, True)
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
+
+    # имя приложения для панели задач/диспетчера (AppUserModelID)
+    try:
+        _shell32 = ctypes.windll.shell32
+        _shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [ctypes.c_wchar_p]
+        _shell32.SetCurrentProcessExplicitAppUserModelID("zai.peak.controller")
+    except Exception:
+        pass
+    app.setWindowIcon(make_icon("#3ddc97"))  # иконка-молния для всех окон
 
     signals = Signals()
     signals.fit.connect(lambda h: win.apply_fit(h))
