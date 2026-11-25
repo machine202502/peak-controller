@@ -16,7 +16,10 @@ import requests
 URL_OVERVIEW = "https://docs.z.ai/devpack/overview.md"
 URL_NOTICE = "https://docs.z.ai/devpack/notice/usage-revision.md"
 USER_AGENT = "peak-controller/1.0 (local tray widget)"
-TIMEOUT = 25
+TIMEOUT = 6          # на одну попытку: нормальный ответ — доли секунды
+ATTEMPTS = 3         # docs.z.ai рвёт TLS при частых запросах — пара повторов спасает
+BACKOFF = (2, 4)     # паузы между попытками
+BUDGET = 10          # секунд на весь источник: лежачий сайт не держит обновление
 PAUSE_BETWEEN = 1.5  # docs.z.ai режет частоту запросов — качаем последовательно
 
 EXPECTED_MODELS = ("GLM-5.3", "GLM-5.3-Flash")
@@ -27,8 +30,12 @@ class ParseError(Exception):
     """Структура страницы незнакома — вероятно, сайт изменился."""
 
 
-def fetch_text(url: str, attempts: int = 4) -> str:
-    """GET с повторами: docs.z.ai иногда сбрасывает TLS-соединения при частых запросах."""
+def fetch_text(url: str, attempts: int = ATTEMPTS, deadline: float | None = None) -> str:
+    """GET с повторами: docs.z.ai иногда сбрасывает TLS-соединения при частых запросах.
+
+    deadline (time.monotonic) — общий бюджет источника: как только он исчерпан,
+    новые попытки не начинаются, чтобы обновление не висело минутами.
+    """
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/126.0 Safari/537.36",
@@ -37,6 +44,8 @@ def fetch_text(url: str, attempts: int = 4) -> str:
     }
     last: Exception | None = None
     for i in range(attempts):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         try:
             r = requests.get(url, headers=headers, timeout=TIMEOUT)
             r.raise_for_status()
@@ -44,9 +53,11 @@ def fetch_text(url: str, attempts: int = 4) -> str:
         except Exception as e:
             last = e
             logging.debug("fetch %s: попытка %d не удалась: %s", url, i + 1, e)
-            if i + 1 < attempts:
-                time.sleep([2, 5, 9][min(i, 2)])
-    raise last  # type: ignore[misc]
+            if i + 1 < attempts and (deadline is None or time.monotonic() < deadline):
+                time.sleep(BACKOFF[min(i, len(BACKOFF) - 1)])
+    if last is None:
+        raise TimeoutError(f"{url}: бюджет обновления исчерпан")
+    raise last
 
 
 def parse_overview(md: str) -> dict:
@@ -114,14 +125,15 @@ def parse_overview(md: str) -> dict:
 
 def refresh() -> dict:
     """Свежий снимок источника. overview обязателен, notice — опциональный кросс-чек."""
-    overview_md = fetch_text(URL_OVERVIEW)
+    deadline = time.monotonic() + BUDGET
+    overview_md = fetch_text(URL_OVERVIEW, deadline=deadline)
     data = parse_overview(overview_md)
     hashes = {"overview": hashlib.sha256(overview_md.encode("utf-8")).hexdigest()}
     warnings = list(data.get("warnings", []))
 
     time.sleep(PAUSE_BETWEEN)
     try:
-        notice_md = fetch_text(URL_NOTICE)
+        notice_md = fetch_text(URL_NOTICE, deadline=deadline)
         hashes["notice"] = hashlib.sha256(notice_md.encode("utf-8")).hexdigest()
         t = notice_md.replace("\u2011", "-")
         mm = re.search(r"Peak hours[^.]*?(\d{1,2}):(\d{2})\s*[–—-]\s*(\d{1,2}):(\d{2})", t)

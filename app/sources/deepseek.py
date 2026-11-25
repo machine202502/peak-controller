@@ -15,7 +15,10 @@ import requests
 URL_PRICING = "https://api-docs.deepseek.com/quick_start/pricing.md"
 URL_UPDATES = "https://api-docs.deepseek.com/updates.md"
 USER_AGENT = "peak-controller/1.0 (local tray widget)"
-TIMEOUT = 25
+TIMEOUT = 6          # на одну попытку
+ATTEMPTS = 3         # повторы на случай сетевых сбоев
+BACKOFF = (2, 4)     # паузы между попытками
+BUDGET = 10          # секунд на весь источник: недоступный сайт не держит обновление
 
 EXPECTED_ALIASES = {"deepseek-flash", "deepseek-v4-pro"}
 _METRICS = (("CACHE HIT", "input_cache_hit"), ("CACHE MISS", "input"), ("OUTPUT TOKENS", "output"))
@@ -25,8 +28,12 @@ class ParseError(Exception):
     """Структура страницы незнакома — вероятно, сайт изменился."""
 
 
-def fetch_text(url: str, attempts: int = 3) -> str:
-    """GET с повторами на случай сетевых сбоев."""
+def fetch_text(url: str, attempts: int = ATTEMPTS, deadline: float | None = None) -> str:
+    """GET с повторами на случай сетевых сбоев.
+
+    deadline (time.monotonic) — общий бюджет источника: исчерпан — новые попытки
+    не начинаются, чтобы обновление не висело минутами.
+    """
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/126.0 Safari/537.36",
@@ -35,15 +42,19 @@ def fetch_text(url: str, attempts: int = 3) -> str:
     }
     last: Exception | None = None
     for i in range(attempts):
+        if deadline is not None and time.monotonic() >= deadline:
+            break
         try:
             r = requests.get(url, headers=headers, timeout=TIMEOUT)
             r.raise_for_status()
             return r.text
         except Exception as e:
             last = e
-            if i + 1 < attempts:
-                time.sleep(2 * (i + 1))
-    raise last  # type: ignore[misc]
+            if i + 1 < attempts and (deadline is None or time.monotonic() < deadline):
+                time.sleep(BACKOFF[min(i, len(BACKOFF) - 1)])
+    if last is None:
+        raise TimeoutError(f"{url}: бюджет обновления исчерпан")
+    raise last
 
 
 def parse_pricing(md: str) -> dict:
@@ -128,11 +139,12 @@ def parse_pricing(md: str) -> dict:
 
 def refresh() -> dict:
     """Свежий снимок источника. Сетевые/парсинговые ошибки пробрасываются наверх."""
-    pricing_md = fetch_text(URL_PRICING)
+    deadline = time.monotonic() + BUDGET
+    pricing_md = fetch_text(URL_PRICING, deadline=deadline)
     data = parse_pricing(pricing_md)
     hashes = {"pricing": hashlib.sha256(pricing_md.encode("utf-8")).hexdigest()}
     try:
-        updates_md = fetch_text(URL_UPDATES)
+        updates_md = fetch_text(URL_UPDATES, deadline=deadline)
         hashes["updates"] = hashlib.sha256(updates_md.encode("utf-8")).hexdigest()
     except Exception:
         hashes["updates"] = None  # changelog вторичен, его недоступность не ломает источник

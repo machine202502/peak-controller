@@ -192,12 +192,13 @@ def build_snapshot(cache: dict) -> dict:
 def fetch_all() -> dict:
     results = {}
     for key, mod in (("glm", glm), ("ds", deepseek)):
+        t0 = time.time()
         try:
             results[key] = mod.refresh()
-            logging.info("%s: обновлено", key)
+            logging.info("%s: обновлено за %.1f c", key, time.time() - t0)
         except Exception as e:
             results[key] = {"error": f"{type(e).__name__}: {e}"}
-            logging.error("%s: ошибка обновления: %s", key, e)
+            logging.error("%s: ошибка за %.1f c: %s", key, time.time() - t0, e)
         time.sleep(1.0)
     return results
 
@@ -224,11 +225,14 @@ def refresh_worker() -> None:
         if state["refreshing"]:
             return
         state["refreshing"] = True
+    logging.info("обновление: старт")
+    t0 = time.time()
     try:
         cache = merge_cache(fetch_all())
     except Exception:
         log_exc("refresh_worker: непредвиденная ошибка")
         cache = store.load()
+    logging.info("обновление: готово за %.1f c", time.time() - t0)
     with lock:
         state["refreshing"] = False
         state["last_refresh"] = time.time()
