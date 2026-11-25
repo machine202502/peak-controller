@@ -286,9 +286,13 @@ def set_autostart(on: bool) -> None:
         else:
             pyexe = Path(sys.executable)
             py = pyexe.with_name("pythonw.exe")
-            if not py.exists() or pyexe.name == "pythonw.exe":
+            if py.exists() or pyexe.name == "pythonw.exe":
+                # pythonw рядом с текущим интерпретатором (в т.ч. .venv) — уже нужной
+                # версии, поэтому флаг -3.12 ему передавать нельзя (он не понимает «-3»)
+                bat.write_text(f'@echo off\r\nstart "" "{py}" "{BASE / "main.py"}"\r\n', encoding="utf-8")
+            else:
                 py = shutil.which("pyw") or sys.executable
-            bat.write_text(f'@echo off\r\nstart "" "{py}" -3.12 "{BASE / "main.py"}"\r\n', encoding="utf-8")
+                bat.write_text(f'@echo off\r\nstart "" "{py}" -3.12 "{BASE / "main.py"}"\r\n', encoding="utf-8")
         logging.info("автозапуск включён: %s", bat)
     except Exception:
         log_exc("set_autostart")
